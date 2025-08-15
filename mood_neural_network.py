@@ -15,6 +15,7 @@ def softmax(list):
 
 class neuralNetwork:
     def __init__(self, inputSize, hiddenSize1, hiddenSize2, hiddenSize3, outputSize):
+        """
         self.weight1 = [
             [random.uniform(-math.sqrt(2 / inputSize), math.sqrt(2 / inputSize))
             for _ in range(inputSize)]
@@ -39,6 +40,22 @@ class neuralNetwork:
         self.weight4 = [[random.uniform(-math.sqrt(2 / hiddenSize3), math.sqrt(2 / hiddenSize3)) for _ in range(hiddenSize3)] for _ in range(outputSize)]
         self.bias4 = [0 for _ in range(outputSize)]
         
+        with open("initial_Weights_Biases.pkl", "wb") as file:
+            pickle.dump({"weight1": self.weight1, "bias1": self.bias1, "weight2": self.weight2, "bias2": self.bias2, "weight3": self.weight3, "bias3": self.bias3, "weight4": self.weight4, "bias4": self.bias4}, file)
+        
+        """
+        
+        with open("initial_Weights_Biases.pkl", "rb") as file:
+            data = pickle.load(file)
+            self.weight1 = data["weight1"]
+            self.bias1 = data["bias1"]
+            self.weight2 = data["weight2"]
+            self.bias2 = data["bias2"]
+            self.weight3 = data["weight3"]
+            self.bias3 = data["bias3"]
+            self.weight4 = data["weight4"]
+            self.bias4 = data["bias4"]
+            
         print("\nLength of weight1[0]: ", len(self.weight1[0]))
         print("Length of weight1: ", len(self.weight1))
         
@@ -50,6 +67,8 @@ class neuralNetwork:
         
         print("\nLength of weight4[0]: ", len(self.weight4[0]))
         print("Length of weight4: ", len(self.weight4))
+        
+        
 
     def forward(self, x):
         self.hidden1 = [
