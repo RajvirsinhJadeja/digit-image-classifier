@@ -55,7 +55,7 @@ class neuralNetwork:
             self.bias3 = data["bias3"]
             self.weight4 = data["weight4"]
             self.bias4 = data["bias4"]
-            
+        
         print("\nLength of weight1[0]: ", len(self.weight1[0]))
         print("Length of weight1: ", len(self.weight1))
         
@@ -94,10 +94,11 @@ class neuralNetwork:
         return softmax(self.output)
 
 
-nn = neuralNetwork(inputSize=1000, hiddenSize1=64, hiddenSize2=32, hiddenSize3=16, outputSize=5)
+nn = neuralNetwork(inputSize=10000, hiddenSize1=64, hiddenSize2=32, hiddenSize3=16, outputSize=5)
 
-inputBOW = [random.randint(0, 1) for _ in range(1000)]
+inputBOW = [random.randint(0, 1) for _ in range(10000)]
 
 outputProbability = nn.forward(x=inputBOW)
 print("Output probabilities:", outputProbability)
 print("Sum:", sum(outputProbability))
+print(-math.log(outputProbability[0]))
