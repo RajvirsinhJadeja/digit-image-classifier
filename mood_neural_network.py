@@ -1,50 +1,35 @@
-import math
+import numpy as np
 import random
 import pickle
 
 
 def relu(x):
-    return max(0, x)
+    return np.maximum(0, x)
 
 
-def softmax(list):
-    expList = [math.exp(x) for x in list]
-    total = sum(expList)
-    return [x / total for x in expList]
+def softmax(x):
+    numerator = np.exp(x)
+    denominator = np.sum(numerator)
+    return numerator/denominator
 
 
 class neuralNetwork:
     def __init__(self, inputSize, hiddenSize1, hiddenSize2, hiddenSize3, hiddenSize4, outputSize):
         """
-        self.weight1 = [
-            [random.uniform(-math.sqrt(2 / inputSize), math.sqrt(2 / inputSize)) for _ in range(inputSize)]
-            for _ in range(hiddenSize1)
-        ]
-        self.bias1 = [0 for _ in range(hiddenSize1)]
+        self.weight1 = self.he_init(inputSize, hiddenSize1)
+        self.bias1 = np.zeros(hiddenSize1)
 
-        self.weight2 = [
-            [random.uniform(-math.sqrt(2 / hiddenSize1), math.sqrt(2 / hiddenSize1)) for _ in range(hiddenSize1)]
-            for _ in range(hiddenSize2)
-        ]
-        self.bias2 = [0 for _ in range(hiddenSize2)]
+        self.weight2 = self.he_init(hiddenSize1, hiddenSize2)
+        self.bias2 = np.zeros(hiddenSize2)
 
-        self.weight3 = [
-            [random.uniform(-math.sqrt(2 / hiddenSize2), math.sqrt(2 / hiddenSize2)) for _ in range(hiddenSize2)]
-            for _ in range(hiddenSize3)
-        ]
-        self.bias3 = [0 for _ in range(hiddenSize3)]
+        self.weight3 = self.he_init(hiddenSize2, hiddenSize3)
+        self.bias3 = np.zeros(hiddenSize3)
 
-        self.weight4 = [
-            [random.uniform(-math.sqrt(2 / hiddenSize3), math.sqrt(2 / hiddenSize3)) for _ in range(hiddenSize3)]
-            for _ in range(hiddenSize4)
-        ]
-        self.bias4 = [0 for _ in range(hiddenSize4)]
+        self.weight4 = self.he_init(hiddenSize3, hiddenSize4)
+        self.bias4 = np.zeros(hiddenSize4)
 
-        self.weight5 = [
-            [random.uniform(-math.sqrt(2 / hiddenSize4), math.sqrt(2 / hiddenSize4)) for _ in range(hiddenSize4)]
-            for _ in range(outputSize)
-        ]
-        self.bias5 = [0 for _ in range(outputSize)]
+        self.weight5 = self.he_init(hiddenSize4, outputSize)
+        self.bias5 = np.zeros(outputSize)
 
         with open("weights_biases.pkl", "wb") as file:
             pickle.dump({
@@ -59,32 +44,37 @@ class neuralNetwork:
         
         with open("weights_biases.pkl", "rb") as file:
             data = pickle.load(file)
-            self.weight1 = data["weight1"]
-            self.bias1 = data["bias1"]
-            self.weight2 = data["weight2"]
-            self.bias2 = data["bias2"]
-            self.weight3 = data["weight3"]
-            self.bias3 = data["bias3"]
-            self.weight4 = data["weight4"]
-            self.bias4 = data["bias4"]
-            self.weight5 = data["weight5"]
-            self.bias5 = data["bias5"]
+            
+        self.weight1 = np.array(data["weight1"])
+        self.bias1   = np.array(data["bias1"])
+        self.weight2 = np.array(data["weight2"])
+        self.bias2   = np.array(data["bias2"])
+        self.weight3 = np.array(data["weight3"])
+        self.bias3   = np.array(data["bias3"])
+        self.weight4 = np.array(data["weight4"])
+        self.bias4   = np.array(data["bias4"])
+        self.weight5 = np.array(data["weight5"])
+        self.bias5   = np.array(data["bias5"])
+
+
+    def he_init(self, fan_in, fan_out):
+        return np.random.randn(fan_out, fan_in) * np.sqrt(2 / fan_in)
 
 
     def forward_pass(self, x) -> tuple:
-        z1 = [sum(w * i for w, i in zip(weights, x)) + b for weights, b in zip(self.weight1, self.bias1)]
-        a1 = [relu(z) for z in z1]
+        z1 = np.dot(self.weight1, x) + self.bias1
+        a1 = relu(z1)
 
-        z2 = [sum(w * i for w, i in zip(weights, a1)) + b for weights, b in zip(self.weight2, self.bias2)]
-        a2 = [relu(z) for z in z2]
+        z2 = np.dot(self.weight2, a1) + self.bias2
+        a2 = relu(z2)
 
-        z3 = [sum(w * i for w, i in zip(weights, a2)) + b for weights, b in zip(self.weight3, self.bias3)]
-        a3 = [relu(z) for z in z3]
+        z3 = np.dot(self.weight3, a2) + self.bias3
+        a3 = relu(z3)
 
-        z4 = [sum(w * i for w, i in zip(weights, a3)) + b for weights, b in zip(self.weight4, self.bias4)]
-        a4 = [relu(z) for z in z4]
+        z4 = np.dot(self.weight4, a3) + self.bias4
+        a4 = relu(z4)
 
-        z5 = [sum(w * i for w, i in zip(weights, a4)) + b for weights, b in zip(self.weight5, self.bias5)]
+        z5 = np.dot(self.weight5, a4) + self.bias5
         a5 = softmax(z5)
 
         return z1, a1, z2, a2, z3, a3, z4, a4, z5, a5
@@ -92,7 +82,7 @@ class neuralNetwork:
 """
 nn = neuralNetwork(inputSize=10000, hiddenSize1=1024, hiddenSize2=256, hiddenSize3=64, hiddenSize4=16, outputSize=5)
 
-inputBOW = [random.randint(0, 1) for _ in range(10000)]
+inputBOW = np.random.randint(0, 2, size=10000)
 
 z1, a1, z2, a2, z3, a3, z4, a4, z5, a5 = nn.forward_pass(x=inputBOW)
 print("Output probabilities:", a5)

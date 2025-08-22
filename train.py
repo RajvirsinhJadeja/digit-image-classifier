@@ -1,3 +1,4 @@
+import numpy as np
 import pickle
 import random
 from mood_neural_network import neuralNetwork
@@ -65,42 +66,63 @@ nn = neuralNetwork(inputSize=10000, hiddenSize1=1024, hiddenSize2=256, hiddenSiz
 z1, a1, z2, a2, z3, a3, z4, a4, z5, a5 = nn.forward_pass(x=input)
 
 with open("weights_biases.pkl", "rb") as file:
-            data = pickle.load(file)
-            weight1 = data["weight1"]
-            bias1 = data["bias1"]
-            weight2 = data["weight2"]
-            bias2 = data["bias2"]
-            weight3 = data["weight3"]
-            bias3 = data["bias3"]
-            weight4 = data["weight4"]
-            bias4 = data["bias4"]
-            weight5 = data["weight5"]
-            bias5 = data["bias5"]
+    data = pickle.load(file)
+            
+weight1 = np.array(data["weight1"])
+bias1   = np.array(data["bias1"])
+weight2 = np.array(data["weight2"])
+bias2   = np.array(data["bias2"])
+weight3 = np.array(data["weight3"])
+bias3   = np.array(data["bias3"])
+weight4 = np.array(data["weight4"])
+bias4   = np.array(data["bias4"])
+weight5 = np.array(data["weight5"])
+bias5   = np.array(data["bias5"])
+
 
 # weight5 = 5 x 16
-# weight4 = 16 x 62
-# weight3 = 62 x 256
+# weight4 = 16 x 64
+# weight3 = 64 x 256
 # weight2 = 256 x 1024
 # weight1 = 1024 x 10000
 
 # bias5 = 5
 # bias4 = 16
-# bias3 = 62
+# bias3 = 64
 # bias2 = 256
 # bias1 = 1024
 
-target = [1, 0, 0, 0, 0]
-dL_dz4 = [x - y for x, y in zip(a5, target)] #Lenght of 5
+# z5 = 5
+# z4 = 16
+# z3 = 64
+# z2 = 256
+# z1 = 1024
 
+# a5 = 5
+# a4 = 16
+# a3 = 64
+# a2 = 256
+# a1 = 1024
+
+lr = 0.1
+target = np.array([1, 0, 0, 0, 0])
+
+dL_dz5 = a5 - target
+def backprop_layer5():
+    dL_dw5 = np.outer(dL_dz5, a4)
+
+    updated_w5 = weight5 - (lr * dL_dw5)
+    updated_b5 = bias5 - (lr * dL_dz5)
+
+
+dL_dz4 = np.dot(weight5.T, dL_dz5) * np.array([1 if x > 0 else 0 for x in z4])
 def backprop_layer4():
-    dL_dw4 = [[x * y for y in a3] for x in dL_dz4]
-
-    updated_w4 = [[w - (slope * 0.1) for w, slope in zip(weight_row, grad_row)] for weight_row, grad_row in zip(weight4, dL_dw4)]
-    updated_b4 = [old_bias - (slope * 0.1) for old_bias, slope in zip(bias4, dL_dz4)]
-
-
-def backprop_layer3():
+    dL_dw4 = np.outer(dL_dz4, a3)
     
-    dL_dw3 = []
+    updated_w4 = weight4 - (lr * dL_dw4)
+    updated_b4 = bias4 - (lr * dL_dz4)
     
     
+
+backprop_layer5()
+backprop_layer4()
