@@ -1,6 +1,5 @@
 import numpy as np
 import pickle
-import random
 from mood_neural_network import neuralNetwork
 
 input = [1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 
@@ -79,31 +78,6 @@ bias4   = np.array(data["bias4"])
 weight5 = np.array(data["weight5"])
 bias5   = np.array(data["bias5"])
 
-
-# weight5 = 5 x 16
-# weight4 = 16 x 64
-# weight3 = 64 x 256
-# weight2 = 256 x 1024
-# weight1 = 1024 x 10000
-
-# bias5 = 5
-# bias4 = 16
-# bias3 = 64
-# bias2 = 256
-# bias1 = 1024
-
-# z5 = 5
-# z4 = 16
-# z3 = 64
-# z2 = 256
-# z1 = 1024
-
-# a5 = 5
-# a4 = 16
-# a3 = 64
-# a2 = 256
-# a1 = 1024
-
 lr = 0.1
 target = np.array([1, 0, 0, 0, 0])
 
@@ -114,15 +88,37 @@ def backprop_layer5():
     updated_w5 = weight5 - (lr * dL_dw5)
     updated_b5 = bias5 - (lr * dL_dz5)
 
-
-dL_dz4 = np.dot(weight5.T, dL_dz5) * np.array([1 if x > 0 else 0 for x in z4])
+dL_dz4 = np.dot(weight5.T, dL_dz5) * (z4 > 0).astype(int)
 def backprop_layer4():
     dL_dw4 = np.outer(dL_dz4, a3)
     
     updated_w4 = weight4 - (lr * dL_dw4)
     updated_b4 = bias4 - (lr * dL_dz4)
+
+dL_dz3 = np.dot(weight4.T, dL_dz4) * (z3 > 0).astype(int)
+def backprop_layer3():
+    dL_dw3 = np.outer(dL_dz3, a2)
     
+    updated_w3 = weight3 - (lr * dL_dw3)
+    updated_b3 = bias3 - (lr * dL_dz3)
+
+dL_dz2 = np.dot(weight3.T, dL_dz3) * (z2 > 0).astype(int)
+def backprop_layer2():
+    dL_dw2 = np.outer(dL_dz2, a1)
     
+    updated_w2 = weight2 - (lr * dL_dw2)
+    updated_b2 = bias2 - (lr * dL_dz2)
+
+dL_dz1 = np.dot(weight2.T, dL_dz2) * (z1 > 0).astype(int)
+def backprop_layer1():
+    dL_dw1 = np.outer(dL_dz1, input)
+    
+    updated_w1 = weight1 - (lr * dL_dw1)
+    updated_b1 = bias1 - (lr * dL_dz1)
+
 
 backprop_layer5()
 backprop_layer4()
+backprop_layer3()
+backprop_layer2()
+backprop_layer1()
