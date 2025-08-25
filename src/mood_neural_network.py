@@ -1,5 +1,4 @@
 import numpy as np
-import random
 import pickle
 
 
@@ -42,7 +41,7 @@ class neuralNetwork:
         
         """
         
-        with open("weights_biases.pkl", "rb") as file:
+        with open("data/weights_biases.pkl", "rb") as file:
             data = pickle.load(file)
             
         self.weight1 = np.array(data["weight1"])

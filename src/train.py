@@ -64,7 +64,7 @@ input = [1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1,
 nn = neuralNetwork(inputSize=10000, hiddenSize1=1024, hiddenSize2=256, hiddenSize3=64, hiddenSize4=16, outputSize=5)
 z1, a1, z2, a2, z3, a3, z4, a4, z5, a5 = nn.forward_pass(x=input)
 
-with open("weights_biases.pkl", "rb") as file:
+with open("data/weights_biases.pkl", "rb") as file:
     data = pickle.load(file)
             
 weight1 = np.array(data["weight1"])
