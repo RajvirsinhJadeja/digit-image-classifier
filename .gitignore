@@ -1,5 +1,7 @@
 # Project files
-data/dataset.csv
+data/training.csv
+data/validation.csv
+data/test.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
