@@ -44,7 +44,7 @@ class neuralNetwork:
         return z_list, activation_list
     
     
-    def backpropogate(self, z_list, activation_list, target, lr=0.1):
+    def backpropogate(self, z_list, activation_list, target, lr=0.001):
         updated_weights = []
         updated_biases = []
         
