@@ -1,18 +1,18 @@
 import numpy as np
-import random
 import pickle
 
 
 def relu(x):
     return np.maximum(0, x)
 
+
 def relu_derivative(x):
     return (x > 0).astype(float)
 
+
 def softmax(x):
-    numerator = np.exp(x)
-    denominator = np.sum(numerator)
-    return numerator/denominator
+    numerator = np.exp(x - np.max(x))
+    return numerator/np.sum(numerator)
 
 
 class neuralNetwork:
