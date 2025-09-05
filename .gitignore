@@ -2,6 +2,8 @@
 data/training.csv
 data/validation.csv
 data/test.csv
+data/saved_models
+data/metrics
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,25 +1,20 @@
 import pickle
-import csv
+import cupy as cy
 
-with open("data/word_map.pkl", "rb") as file:
-    map = pickle.load(file)
+with open("data/weights_biases.pkl", "rb") as file:
+    data = pickle.load(file)
+
+with open("data/saved_models/weights_biases_epoch19.pkl", "rb") as file:
+    new_data = pickle.load(file)
+
+with open("data/metrics/val_loss.pkl", "rb") as file:
+    loss = pickle.load(file)
     
 
-with open("data/training.csv", "r", encoding="utf-8") as file:
-    reader = csv.reader(file)
-    data = list(reader)
+old_bias = cy.array(data["bias5"])
+new_bias = cy.array(new_data["bias5"])
 
-words_found = 0
-total_words = 0
+print(old_bias)
+print(new_bias)
 
-for row in data:
-    list = row[0].split()
-    
-    for word in list:
-        total_words += 1
-        
-        if map.get(word) is not None:
-            words_found += 1
-
-print(words_found/total_words * 100)
-
+print(cy.array(loss))
