@@ -4,6 +4,7 @@ data/validation.csv
 data/test.csv
 data/saved_models
 data/metrics
+data/word_map.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
