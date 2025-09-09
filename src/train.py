@@ -6,21 +6,13 @@ from sqlite_dict import SqliteDict
 
 start_time = time.time()
 
-with open("data/training.csv", "r") as file:
+with open("data/precomputed_training.csv", "r") as file:
     reader = csv.reader(file)
     train_data = list(reader)
 
-with open("data/validation.csv", "r") as file:
+with open("data/precomputed_validation.csv", "r") as file:
     reader = csv.reader(file)
     val_data = list(reader)
-
-label_to_index = {
-    "happy": 0,
-    "sad": 1,
-    "anger": 2,
-    "fear": 3,
-    "disgust": 4
-}
 
 nn = neuralNetwork()
 db = SqliteDict()
@@ -32,31 +24,14 @@ val_accuracy_list = []
 
 batch_size = 32
 
-def get_mean(word_list):
-    value_list = []
-    for word in word_list:
-        value = db[word]
-        if value is not None:
-            value_list.append(value)
-    
-    if len(value_list) == 0:
-        return cy.zeros(100, dtype=cy.float32)
-    
-    return cy.mean(cy.array(value_list), axis=0)
-
 def train():
+    total_loss = 0
+    total_acc = 0
     for start in range(0, len(train_data), batch_size):
         batch = train_data[start : start+batch_size]
         
-        input_batch = []
-        target_batch = []
-        
-        for row in batch:
-            input_batch.append(get_mean(row[0].lower().split()))
-            
-            l = cy.zeros(5)
-            l[label_to_index[row[1]]] = 1
-            target_batch.append(l)
+        input_batch = [[float(num) for num in row[0].split()] for row in batch]
+        target_batch = [[int(num) for num in row[1].split()] for row in batch]
         
         input_batch = cy.array(input_batch)     # shape 32x100
         target_batch = cy.array(target_batch)   # shape 32x5
@@ -64,20 +39,60 @@ def train():
         # Forward Pass
         z_list, activation_list = nn.forward_pass(x=input_batch)
         
-        # Loss
+        # Loss/Acc
+        probability_list = activation_list[-1]  # shape 32x5
         
-        break
+        batch_loss = -cy.sum(target_batch * cy.log(probability_list), axis=1)
+        total_loss += cy.sum(batch_loss)
+        
+        batch_acc = cy.sum(cy.argmax(probability_list, axis=1) == cy.argmax(target_batch, axis=1))
+        total_acc += batch_acc
+        
+        #Back propogation
+        nn.backpropogate(z_list=z_list, activation_list=activation_list, target=target_batch, batch_size=batch_size)
+        
+        if start % 6400 == 0:
+            print(start)
+    
+    train_loss_list.append(total_loss/len(train_data))
+    train_accuracy_list.append(total_acc/len(train_data))
     return
 
 
 def validation():
+    total_loss = 0
+    total_acc = 0
+    for start in range(0, len(val_data), batch_size):
+        batch = val_data[start : start+batch_size]
+        
+        input_batch = [[float(num) for num in row[0].split()] for row in batch]
+        target_batch = [[int(num) for num in row[1].split()] for row in batch]
+        
+        input_batch = cy.array(input_batch)     # shape 32x100
+        target_batch = cy.array(target_batch)   # shape 32x5
+        
+        # Forward Pass
+        z_list, activation_list = nn.forward_pass(x=input_batch)
+        
+        # Loss/Acc
+        probability_list = activation_list[-1]  # shape 32x5
+        
+        batch_loss = -cy.sum(target_batch * cy.log(probability_list), axis=1)
+        total_loss += cy.sum(batch_loss)
+        
+        batch_acc = cy.sum(cy.argmax(probability_list, axis=1) == cy.argmax(target_batch, axis=1))
+        total_acc += batch_acc
     
+    val_loss_list.append(total_loss/len(val_data))
+    val_accuracy_list.append(total_acc/len(val_data))
     return
 
 
 def run_epoch(epoch_count):
     for count in range(0, epoch_count):
+        print("\nTraining #", count)
         train()
+        print("\nValidation #", count)
         validation()
         break
 
@@ -98,5 +113,6 @@ if __name__ ==  "__main__":
     nn = neuralNetwork()
     nn.load_weights_biases()
     
-    run_epoch(epoch_count=5)
+    run_epoch(epoch_count=1)
+    print("Time: ", time.time() - start_time)
     # save_data()

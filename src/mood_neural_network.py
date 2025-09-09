@@ -70,22 +70,17 @@ class neuralNetwork:
         return z_list, activation_list
     
     
-    def backpropogate(self, z_list, activation_list, target, lr=0.001):
+    def backpropogate(self, z_list, activation_list, target, batch_size, lr=0.001):
         updated_weights = []
         updated_biases = []
         
         dz_list = [activation_list[-1] - target]
         
-        updated_weights.append(self.weights[-1] - (lr * (cy.outer(dz_list[-1], activation_list[-2]))))
-        updated_biases.append(self.biases[-1] - (lr * dz_list[-1]))
+        updated_weights.append(self.weights[-1] - (lr * (cy.dot(dz_list[-1].T, activation_list[-2]) /  batch_size)))
+        updated_biases.append(self.biases[-1] - (lr * cy.mean(dz_list[-1], axis=0)))
         
-        for i in range(3, 0, -1):
-            dz = cy.dot(self.weights[i].T, dz_list[-1]) * relu_derivative(z_list[i-1])
-            
-            updated_weights.insert(0, self.weights[i-1] - (lr * (cy.outer(dz, activation_list[i-1]))))
-            updated_biases.insert(0, self.biases[i-1] - (lr * dz))
-            
-            dz_list.append(dz)
+        for i in range(len(self.weights)-2, -1, -1):
+             
         
         self.weights = updated_weights
         self.biases = updated_biases
