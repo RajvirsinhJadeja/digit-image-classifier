@@ -76,11 +76,22 @@ class neuralNetwork:
         
         dz_list = [activation_list[-1] - target]
         
-        updated_weights.append(self.weights[-1] - (lr * (cy.dot(dz_list[-1].T, activation_list[-2]) /  batch_size)))
-        updated_biases.append(self.biases[-1] - (lr * cy.mean(dz_list[-1], axis=0)))
+        grad_w = cy.dot(dz_list[-1].T, activation_list[-2]) /  batch_size
+        grad_b = cy.mean(dz_list[-1], axis=0)
+        
+        updated_weights.append(self.weights[-1] - lr * grad_w)
+        updated_biases.append(self.biases[-1] - lr * grad_b)
         
         for i in range(len(self.weights)-2, -1, -1):
-             
+            dz = cy.dot(dz_list[-1], self.weights[i+1]) * relu_derivative(z_list[i])
+            
+            grad_w = cy.dot(dz.T, activation_list[i]) / batch_size
+            grad_b = cy.mean(dz, axis=0)
+            
+            updated_weights.insert(0, self.weights[i] - lr * grad_w)
+            updated_biases.insert(0, self.biases[i] - lr * grad_b)
+            
+            dz_list.append(dz)
         
         self.weights = updated_weights
         self.biases = updated_biases
@@ -112,6 +123,7 @@ class neuralNetwork:
 
 if __name__ ==  "__main__":
     nn = neuralNetwork()
+    
     nn.create_weights_biases(inputSize=100, hiddenSize1=32, hiddenSize2=16, hiddenSize3=8, outputSize=5)
     
     """

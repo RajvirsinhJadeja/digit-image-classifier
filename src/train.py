@@ -1,12 +1,12 @@
 import cupy as cy
+import pickle
 import csv
 import time
 from mood_neural_network import neuralNetwork
-from sqlite_dict import SqliteDict
 
 start_time = time.time()
 
-with open("data/precomputed_training.csv", "r") as file:
+with open("data/precomputed_training_test.csv", "r") as file:
     reader = csv.reader(file)
     train_data = list(reader)
 
@@ -15,7 +15,6 @@ with open("data/precomputed_validation.csv", "r") as file:
     val_data = list(reader)
 
 nn = neuralNetwork()
-db = SqliteDict()
 train_loss_list = []
 train_accuracy_list = []
 
@@ -42,7 +41,7 @@ def train():
         # Loss/Acc
         probability_list = activation_list[-1]  # shape 32x5
         
-        batch_loss = -cy.sum(target_batch * cy.log(probability_list), axis=1)
+        batch_loss = -cy.sum(target_batch * cy.log(probability_list + 1e-9), axis=1)
         total_loss += cy.sum(batch_loss)
         
         batch_acc = cy.sum(cy.argmax(probability_list, axis=1) == cy.argmax(target_batch, axis=1))
@@ -50,13 +49,9 @@ def train():
         
         #Back propogation
         nn.backpropogate(z_list=z_list, activation_list=activation_list, target=target_batch, batch_size=batch_size)
-        
-        if start % 6400 == 0:
-            print(start)
     
     train_loss_list.append(total_loss/len(train_data))
     train_accuracy_list.append(total_acc/len(train_data))
-    return
 
 
 def validation():
@@ -85,16 +80,14 @@ def validation():
     
     val_loss_list.append(total_loss/len(val_data))
     val_accuracy_list.append(total_acc/len(val_data))
-    return
 
 
 def run_epoch(epoch_count):
     for count in range(0, epoch_count):
         print("\nTraining #", count)
         train()
-        print("\nValidation #", count)
+        print("Validation #", count)
         validation()
-        break
 
 
 def save_data():
@@ -113,6 +106,6 @@ if __name__ ==  "__main__":
     nn = neuralNetwork()
     nn.load_weights_biases()
     
-    run_epoch(epoch_count=1)
+    run_epoch(epoch_count=1000)
     print("Time: ", time.time() - start_time)
-    # save_data()
+    save_data()

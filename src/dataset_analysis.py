@@ -1,10 +1,8 @@
 import pickle
-import csv
 import cupy as cy
 from matplotlib import pyplot as plt
-from sqlite_dict import SqliteDict
 
-"""with open("data/metrics/train_loss.pkl", "rb") as file:
+with open("data/metrics/train_loss.pkl", "rb") as file:
     t_loss = pickle.load(file)
     
 with open("data/metrics/train_accuracy.pkl", "rb") as file:
@@ -17,71 +15,33 @@ with open("data/metrics/val_accuracy.pkl", "rb") as file:
     v_acc = pickle.load(file)
 
 
-x_value = list(range(1, 6))
-y_value = cy.array(t_loss).tolist()
+# Convert to lists (cupy -> python lists)
+t_loss = cy.array(t_loss).tolist()
+t_acc = cy.array(t_acc).tolist()
+v_loss = cy.array(v_loss).tolist()
+v_acc = cy.array(v_acc).tolist()
 
-plt.plot(x_value, y_value)
+# X values = epochs
+epochs = list(range(1, len(t_loss) + 1))
 
+# --- Plot Loss ---
+plt.figure(figsize=(8, 5))
+plt.plot(epochs, t_loss, label="Training Loss")
+plt.plot(epochs, v_loss, label="Validation Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.title("Training vs Validation Loss")
+plt.legend()
+plt.grid(True)
 plt.show()
 
-y_value = cy.array(t_acc).tolist()
-
-plt.plot(x_value, y_value)
-
+# --- Plot Accuracy ---
+plt.figure(figsize=(8, 5))
+plt.plot(epochs, t_acc, label="Training Accuracy")
+plt.plot(epochs, v_acc, label="Validation Accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.title("Training vs Validation Accuracy")
+plt.legend()
+plt.grid(True)
 plt.show()
-
-y_value = cy.array(v_loss).tolist()
-
-plt.plot(x_value, y_value)
-
-plt.show()
-
-y_value = cy.array(v_acc).tolist()
-
-plt.plot(x_value, y_value)
-
-plt.show()"""
-
-db = SqliteDict()
-
-label_to_target = {
-    "happy": [1, 0, 0, 0, 0],
-    "sad": [0, 1, 0, 0, 0],
-    "anger": [0, 0, 1, 0, 0],
-    "fear": [0, 0, 0, 1, 0],
-    "disgust": [0, 0, 0, 0, 1]
-}
-
-new_data = []
-
-def get_mean(word_list):
-    value_list = []
-    for word in word_list:
-        value = db[word]
-        if value is not None:
-            value_list.append(value)
-    
-    if len(value_list) == 0:
-        return cy.zeros(100, dtype=cy.float32)
-    
-    return cy.mean(cy.array(value_list), axis=0)
-
-with open("data/test.csv", "r") as file:
-    reader = csv.reader(file)
-    train_data = list(reader)
-
-for row in train_data:
-    emb = get_mean(row[0].lower().split())
-    target = label_to_target[row[1]]
-    
-    emb_string = " ".join(map(str, emb.tolist()))
-    target_string = " ".join(str(item) for item in target)
-    
-    new_data.append([emb_string, target_string])
-    
-    # convert back to floatsfloat_list = list(map(float, test.split()))
-    
-with open("data/precomputed_test.csv", "w",  newline="") as file:
-    writer = csv.writer(file)
-    writer.writerows(new_data)
-    
