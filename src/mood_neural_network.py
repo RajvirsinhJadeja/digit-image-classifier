@@ -48,53 +48,78 @@ class neuralNetwork:
         
         self.weights = [cy.array(data["weight1"]), cy.array(data["weight2"]), cy.array(data["weight3"]), cy.array(data["weight4"])]
         self.biases = [cy.array(data["bias1"]), cy.array(data["bias2"]), cy.array(data["bias3"]), cy.array(data["bias4"])]
+        
+        self.m_w = [cy.zeros_like(w) for w in self.weights]
+        self.m_b = [cy.zeros_like(b) for b in self.biases]
+        
+        self.v_w = [cy.zeros_like(w) for w in self.weights]
+        self.v_b = [cy.zeros_like(b) for b in self.biases]
+        
+        self.t = 0
     
     
-    def forward_pass(self, x) -> tuple:
+    def forward_pass(self, x):
         z_list = []
         activation_list = [x]
-        
-        for i in range(0, len(self.weights) - 1):
+
+        for i in range(len(self.weights) - 1):
             z = cy.dot(activation_list[i], self.weights[i].T) + self.biases[i]
             a = relu(z)
-            
             z_list.append(z)
             activation_list.append(a)
 
-        z5 = cy.dot(activation_list[-1], self.weights[-1].T) + self.biases[-1]
-        a5 = softmax(z5)
-        
-        z_list.append(z5)
-        activation_list.append(a5)
+        z_out = cy.dot(activation_list[-1], self.weights[-1].T) + self.biases[-1]
+        a_out = softmax(z_out)
+        z_list.append(z_out)
+        activation_list.append(a_out)
 
         return z_list, activation_list
-    
-    
-    def backpropogate(self, z_list, activation_list, target, batch_size, lr=0.001):
-        updated_weights = []
-        updated_biases = []
+
+
+    def backpropogate(self, z_list, activation_list, target, batch_size, l2_lambda=0.001) -> tuple:
+        gradient_weights = []
+        gradient_biases = []
         
         dz_list = [activation_list[-1] - target]
-        
-        grad_w = cy.dot(dz_list[-1].T, activation_list[-2]) /  batch_size
+
+        grad_w = cy.dot(dz_list[-1].T, activation_list[-2]) / batch_size + l2_lambda * self.weights[-1]
         grad_b = cy.mean(dz_list[-1], axis=0)
         
-        updated_weights.append(self.weights[-1] - lr * grad_w)
-        updated_biases.append(self.biases[-1] - lr * grad_b)
-        
+        gradient_weights.insert(0, grad_w)
+        gradient_biases.insert(0, grad_b)
+
         for i in range(len(self.weights)-2, -1, -1):
             dz = cy.dot(dz_list[-1], self.weights[i+1]) * relu_derivative(z_list[i])
             
-            grad_w = cy.dot(dz.T, activation_list[i]) / batch_size
+            grad_w = cy.dot(dz.T, activation_list[i]) / batch_size + l2_lambda * self.weights[i]
             grad_b = cy.mean(dz, axis=0)
             
-            updated_weights.insert(0, self.weights[i] - lr * grad_w)
-            updated_biases.insert(0, self.biases[i] - lr * grad_b)
+            gradient_weights.insert(0, grad_w)
+            gradient_biases.insert(0, grad_b)
             
             dz_list.append(dz)
         
-        self.weights = updated_weights
-        self.biases = updated_biases
+        return gradient_weights, gradient_biases
+
+
+    def adam_optimizer(self, gradient_weights, gradient_biases, lr=0.001, b1=0.9, b2=0.99, eps=1e-8):
+        self.t += 1
+        
+        for i in range(len(self.weights)):
+            self.m_w[i] = b1 * self.m_w[i] + (1-b1) * gradient_weights[i]
+            self.m_b[i] = b1 * self.m_b[i] + (1-b1) * gradient_biases[i]
+            
+            m_w_hat = self.m_w[i] / (1 - (b1 ** self.t))
+            m_b_hat = self.m_b[i] / (1 - (b1 ** self.t))
+            
+            self.v_w[i] = b2 * self.v_w[i] + (1 - b2) * cy.square(gradient_weights[i])
+            self.v_b[i] = b2 * self.v_b[i] + (1 - b2) * cy.square(gradient_biases[i])
+            
+            v_w_hat = self.v_w[i] / (1 - (b2 ** self.t))
+            v_b_hat = self.v_b[i] / (1 - (b2 ** self.t))
+            
+            self.weights[i] = self.weights[i] - lr * (m_w_hat / (cy.sqrt(v_w_hat) + eps))
+            self.biases[i] = self.biases[i] - lr * (m_b_hat / (cy.sqrt(v_b_hat) + eps))
 
 
     def get_weights_biases(self) -> tuple:
@@ -124,7 +149,7 @@ class neuralNetwork:
 if __name__ ==  "__main__":
     nn = neuralNetwork()
     
-    nn.create_weights_biases(inputSize=100, hiddenSize1=32, hiddenSize2=16, hiddenSize3=8, outputSize=5)
+    nn.create_weights_biases(inputSize=300, hiddenSize1=32, hiddenSize2=16, hiddenSize3=8, outputSize=5)
     
     """
     icyutBOW = cy.random.randint(0, 2, size=10000)
