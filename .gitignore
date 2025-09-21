@@ -1,9 +1,8 @@
 # Project files
-data/training.csv
-data/validation.csv
-data/test.csv
-data/precomputed_300d_training.npz
-data/precomputed_300d_validation.npz
+data/mnist_train.csv
+data/mnist_test.csv
+data/mnist_train.npz
+data/mnist_test.npz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

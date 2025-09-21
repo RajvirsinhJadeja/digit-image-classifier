@@ -2,14 +2,15 @@ import cupy as cy
 import pickle
 import time
 from mood_neural_network import neuralNetwork
+from dataset_analysis import showGraph
 
 start_time = time.time()
 
-train_data = cy.load("data/precomputed_300d_training.npz")
+train_data = cy.load("data/mnist_train.npz")
 train_embeddings = cy.array(train_data["embeddings"])
 train_targets = cy.array(train_data["targets"])
 
-val_data = cy.load("data/precomputed_300d_validation.npz")
+val_data = cy.load("data/mnist_test.npz")
 val_embeddings = cy.array(val_data["embeddings"])
 val_targets = cy.array(val_data["targets"])
 
@@ -20,23 +21,21 @@ train_accuracy_list = []
 val_loss_list = []
 val_accuracy_list = []
 
-batch_size = 32
+batch_size = 64
 
-train_embeddings = train_embeddings[:10000]
-train_targets = train_targets[:10000]
 
 def train():
     total_loss = 0
     total_acc = 0
     for start in range(0, len(train_embeddings), batch_size):
         input_batch = train_embeddings[start:start+batch_size]  # shape 32xinput
-        target_batch = train_targets[start:start+batch_size]    # shape 32x5
+        target_batch = train_targets[start:start+batch_size]    # shape 32x10
         
         # Forward Pass
-        z_list, activation_list = nn.forward_pass(x=input_batch)
+        z_list, activation_list = nn.forward_pass(x=input_batch, dropout_rate=0)
         
         # Loss/Acc
-        probability_list = activation_list[-1]  # shape 32x5
+        probability_list = activation_list[-1]  # shape 32x10
         
         batch_loss = -cy.sum(target_batch * cy.log(probability_list + 1e-9), axis=1)
         total_loss += cy.sum(batch_loss)
@@ -45,7 +44,7 @@ def train():
         total_acc += batch_acc
         
         #Back propogation
-        gradient_weights, gradient_biases = nn.backpropogate(z_list=z_list, activation_list=activation_list, target=target_batch, batch_size=batch_size)
+        gradient_weights, gradient_biases = nn.backpropagate(z_list=z_list, activation_list=activation_list, target=target_batch, batch_size=batch_size)
         nn.adam_optimizer(gradient_weights=gradient_weights, gradient_biases=gradient_biases)
     
     train_loss_list.append(total_loss/len(train_embeddings))
@@ -60,7 +59,7 @@ def validation():
         target_batch = val_targets[start:start+batch_size]    # shape 32x5
         
         # Forward Pass
-        z_list, activation_list = nn.forward_pass(x=input_batch)
+        z_list, activation_list = nn.forward_pass(x=input_batch, dropout_rate=0)
         
         # Loss/Acc
         probability_list = activation_list[-1]  # shape 32x5
@@ -99,8 +98,8 @@ if __name__ ==  "__main__":
     nn = neuralNetwork()
     nn.load_weights_biases()
     
-    run_epoch(epoch_count=30)
+    run_epoch(epoch_count=100)
     print("Time: ", time.time() - start_time)
     save_data()
-    nn.save_weights_biases(number=100)
-
+    nn.save_weights_biases()
+    showGraph()

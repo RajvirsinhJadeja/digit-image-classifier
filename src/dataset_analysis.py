@@ -1,122 +1,103 @@
 import pickle
 import csv
+import numpy as np
 import cupy as cy
-import sqlite3
-from sqlite_dict import SqliteDict
 from matplotlib import pyplot as plt
 
-def create_10k_npz():
+
+def create_npz(name):
     label_to_target = {
-        "happy":   [1, 0, 0, 0, 0],
-        "sad":     [0, 1, 0, 0, 0],
-        "anger":   [0, 0, 1, 0, 0],
-        "fear":    [0, 0, 0, 1, 0],
-        "disgust": [0, 0, 0, 0, 1]
+        "0":   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "1":   [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        "2":   [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        "3":   [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        "4":   [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+        "5":   [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+        "6":   [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+        "7":   [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+        "8":   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+        "9":   [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     }
 
-    with open("data/training.csv", "r") as file:
+    with open(f"data/{name}.csv", "r") as file:
         reader = csv.reader(file)
         train_data = list(reader)
 
-    with open("data/word_map.pkl", "rb") as file:
-        word_map = pickle.load(file)
-
-    def get_array(input):
-        bow = cy.zeros(10000, dtype=cy.int32)
-        for word in input:
-            x = word_map.get(word)
-            if x is not None:
-                bow[x] += 1
-        return bow
-
+    def get_array(row):
+        l = []
+        
+        for i in range(1, len(row)):
+            l.append(int(row[i]))
+        
+        return np.array(l)
+        
+    
     embeddings = []
     targets = []
 
-    for row in train_data:
-        emb = get_array(row[0].lower().split())
-        target = cy.array(label_to_target[row[1]], dtype=cy.int32)
+    for row in train_data[1:]:
+        emb = get_array(row)
+        target = np.array(label_to_target[row[0]], dtype=np.int32)
 
         embeddings.append(emb)
         targets.append(target)
 
-    embeddings = cy.array(embeddings)
-    targets = cy.array(targets)
+    embeddings = np.array(embeddings)
+    targets = np.array(targets)
 
-    cy.savez("data/precomputed_test.npz", embeddings=embeddings, targets=targets)
+    np.savez(f"data/{name}.npz", embeddings=embeddings, targets=targets)
 
-def create_300d_db():
-    conn = sqlite3.connect("data/word_map.db")
-    cursor = conn.cursor()
 
-    cursor.execute("DROP TABLE IF EXISTS kv")
-    cursor.execute("""
-        CREATE TABLE kv (
-            key TEXT PRIMARY KEY,
-            value BLOB
-        )
-    """)
-
-    with open("data/glove.6B.300d.txt", "r", encoding="utf-8") as file:
-        for line in file:
-            parts = line.rstrip().split(" ")
-            word = parts[0]
-            vector = cy.array(parts[1:], dtype=cy.float32)
-
-            vector_cpu = vector.get()  
-            value_blob = pickle.dumps(vector_cpu, protocol=pickle.HIGHEST_PROTOCOL)
-
-            cursor.execute("INSERT INTO kv (key, value) VALUES (?, ?)", (word, value_blob))
-        
-        conn.commit()
-        conn.close()
-        print("Database created: data/word_map.db")
-
-def create_300d_npz():
-    label_to_target = {
-        "happy":   [1, 0, 0, 0, 0],
-        "sad":     [0, 1, 0, 0, 0],
-        "anger":   [0, 0, 1, 0, 0],
-        "fear":    [0, 0, 0, 1, 0],
-        "disgust": [0, 0, 0, 0, 1]
-    }
-
-    sd = SqliteDict()
-    
-    with open("data/validation.csv", "r") as file:
+def analyze_dataset(name):
+    with open(f"data/{name}.csv", "r") as file:
         reader = csv.reader(file)
-        train_data = list(reader)
-
-    def get_array(tokens):
-        bow = []
-        for word in tokens:
-            x = sd[word]
-            if x is not None:
-                bow.append(x)
-                
-        if len(bow) == 0:
-            return cy.zeros(300, dtype=cy.float32)
-        
-        return cy.mean(cy.array(bow), axis=0)
-
-
-    embeddings = []
-    targets = []
-
-    for row in train_data:
-        emb = get_array(row[0].lower().split())
-        target = cy.array(label_to_target[row[1]], dtype=cy.int32)
-
-        embeddings.append(emb)
-        targets.append(target)
-
-    embeddings = cy.stack(embeddings)
-    targets = cy.stack(targets)
+        data = list(reader)
     
-    print(embeddings.shape)
-
-    cy.savez("data/precomputed_300d_validation.npz", embeddings=embeddings, targets=targets)
+    num_0 = 0
+    num_1 = 0
+    num_2 = 0
+    num_3 = 0
+    num_4 = 0
+    num_5 = 0
+    num_6 = 0
+    num_7 = 0
+    num_8 = 0
+    num_9 = 0
     
-    print("Created .npz file")
+    for row in data:
+        if row[0] == "0":
+            num_0 += 1
+        elif row[0] == "1":
+            num_1 += 1
+        elif row[0] == "2":
+            num_2 += 1
+        elif row[0] == "3":
+            num_3 += 1
+        elif row[0] == "4":
+            num_4 += 1
+        elif row[0] == "5":
+            num_5 += 1
+        elif row[0] == "6":
+            num_6 += 1
+        elif row[0] == "7":
+            num_7 += 1
+        elif row[0] == "8":
+            num_8 += 1
+        elif row[0] == "9":
+            num_9 += 1
+
+    print("Num 0: ", num_0)
+    print("Num 1: ", num_1)
+    print("Num 2: ", num_2)
+    print("Num 3: ", num_3)
+    print("Num 4: ", num_4)
+    print("Num 5: ", num_5)
+    print("Num 6: ", num_6)
+    print("Num 7: ", num_7)
+    print("Num 8: ", num_8)
+    print("Num 9: ", num_9)
+    print("Total: ", num_0+num_1+num_2+num_3+num_4+num_5+num_6+num_7+num_8+num_9)
+
 
 def showGraph():
     with open("data/metrics/train_loss.pkl", "rb") as file:
@@ -162,5 +143,9 @@ def showGraph():
     plt.legend()
     plt.grid(True)
     plt.show()
-    
-showGraph()
+
+
+if __name__ ==  "__main__":
+    showGraph()
+    #analyze_dataset("mnist_train")
+    #create_npz("mnist_test")

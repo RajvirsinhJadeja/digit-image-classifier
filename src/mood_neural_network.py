@@ -20,25 +20,18 @@ class neuralNetwork:
         return
         
     
-    def create_weights_biases(self, inputSize, hiddenSize1, hiddenSize2, hiddenSize3, outputSize):
-        self.weight1 = self.he_init(inputSize, hiddenSize1)
-        self.bias1 = cy.zeros(hiddenSize1)
-
-        self.weight2 = self.he_init(hiddenSize1, hiddenSize2)
-        self.bias2 = cy.zeros(hiddenSize2)
-
-        self.weight3 = self.he_init(hiddenSize2, hiddenSize3)
-        self.bias3 = cy.zeros(hiddenSize3)
-
-        self.weight4 = self.he_init(hiddenSize3, outputSize)
-        self.bias4 = cy.zeros(outputSize)
-
+    def create_weights_biases(self, modelSize):
+        self.weights = []
+        self.biases = []
+        
+        for i in range(0, len(modelSize)-1):
+            self.weights.append(self.he_init(modelSize[i], modelSize[i+1]))
+            self.biases.append(cy.zeros(modelSize[i+1]))
+        
         with open("data/weights_biases.pkl", "wb") as file:
             pickle.dump({
-                "weight1": self.weight1, "bias1": self.bias1,
-                "weight2": self.weight2, "bias2": self.bias2,
-                "weight3": self.weight3, "bias3": self.bias3,
-                "weight4": self.weight4, "bias4": self.bias4,
+                "weights": self.weights,
+                "biases": self.biases,
             }, file)
 
 
@@ -46,8 +39,8 @@ class neuralNetwork:
         with open("data/weights_biases.pkl", "rb") as file:
             data = pickle.load(file)
         
-        self.weights = [cy.array(data["weight1"]), cy.array(data["weight2"]), cy.array(data["weight3"]), cy.array(data["weight4"])]
-        self.biases = [cy.array(data["bias1"]), cy.array(data["bias2"]), cy.array(data["bias3"]), cy.array(data["bias4"])]
+        self.weights = [cy.array(w) for w in data["weights"]]
+        self.biases = [cy.array(b) for b in data["biases"]]
         
         self.m_w = [cy.zeros_like(w) for w in self.weights]
         self.m_b = [cy.zeros_like(b) for b in self.biases]
@@ -58,13 +51,18 @@ class neuralNetwork:
         self.t = 0
     
     
-    def forward_pass(self, x):
+    def forward_pass(self, x, dropout_rate):
         z_list = []
         activation_list = [x]
 
         for i in range(len(self.weights) - 1):
             z = cy.dot(activation_list[i], self.weights[i].T) + self.biases[i]
             a = relu(z)
+            
+            if dropout_rate > 0:
+                mask = (cy.random.rand(*a.shape) > dropout_rate).astype(a.dtype)
+                a = a * mask / (1 - dropout_rate)
+            
             z_list.append(z)
             activation_list.append(a)
 
@@ -76,33 +74,31 @@ class neuralNetwork:
         return z_list, activation_list
 
 
-    def backpropogate(self, z_list, activation_list, target, batch_size, l2_lambda=0.001) -> tuple:
+    def backpropagate(self, z_list, activation_list, target, batch_size, l2_lambda=0.001) -> tuple:
         gradient_weights = []
         gradient_biases = []
         
-        dz_list = [activation_list[-1] - target]
+        dz_current = activation_list[-1] - target
 
-        grad_w = cy.dot(dz_list[-1].T, activation_list[-2]) / batch_size + l2_lambda * self.weights[-1]
-        grad_b = cy.mean(dz_list[-1], axis=0)
+        grad_w = cy.dot(dz_current.T, activation_list[-2]) / batch_size + l2_lambda * self.weights[-1]
+        grad_b = cy.mean(dz_current, axis=0)
         
         gradient_weights.insert(0, grad_w)
         gradient_biases.insert(0, grad_b)
 
         for i in range(len(self.weights)-2, -1, -1):
-            dz = cy.dot(dz_list[-1], self.weights[i+1]) * relu_derivative(z_list[i])
+            dz_current = cy.dot(dz_current, self.weights[i+1]) * relu_derivative(z_list[i])
             
-            grad_w = cy.dot(dz.T, activation_list[i]) / batch_size + l2_lambda * self.weights[i]
-            grad_b = cy.mean(dz, axis=0)
+            grad_w = cy.dot(dz_current.T, activation_list[i]) / batch_size + l2_lambda * self.weights[i]
+            grad_b = cy.mean(dz_current, axis=0)
             
             gradient_weights.insert(0, grad_w)
             gradient_biases.insert(0, grad_b)
-            
-            dz_list.append(dz)
         
         return gradient_weights, gradient_biases
 
 
-    def adam_optimizer(self, gradient_weights, gradient_biases, lr=0.001, b1=0.9, b2=0.99, eps=1e-8):
+    def adam_optimizer(self, gradient_weights, gradient_biases, lr=0.0001, b1=0.9, b2=0.999, eps=1e-8):
         self.t += 1
         
         for i in range(len(self.weights)):
@@ -126,19 +122,13 @@ class neuralNetwork:
         return self.weights, self.biases
     
     
-    def save_weights_biases(self, number):
+    def save_weights_biases(self):
         data = {
-            "weight1": self.weights[0],
-            "weight2": self.weights[1],
-            "weight3": self.weights[2],
-            "weight4": self.weights[3],
-            "bias1": self.biases[0],
-            "bias2": self.biases[1],
-            "bias3": self.biases[2],
-            "bias4": self.biases[3],
+            "weights": self.weights,
+            "biases": self.biases,
         }
         
-        with open(f"data/saved_models/weights_biases_epoch{number}.pkl", "wb") as file:
+        with open(f"data/saved_models/updated_weights_biases.pkl", "wb") as file:
             pickle.dump(data, file)
 
 
@@ -149,18 +139,4 @@ class neuralNetwork:
 if __name__ ==  "__main__":
     nn = neuralNetwork()
     
-    nn.create_weights_biases(inputSize=300, hiddenSize1=32, hiddenSize2=16, hiddenSize3=8, outputSize=5)
-    
-    """
-    icyutBOW = cy.random.randint(0, 2, size=10000)
-
-    z_list, activation_list = nn.forward_pass(x=icyutBOW)
-    weights, biases = nn.get_weights_biases()
-    print("Output probabilities:", activation_list[-1])
-    print("Sum:", sum(activation_list[-1]))
-    print("bias pre-backprop:", biases[-1])
-    
-    nn.backpropogate(z_list=z_list, activation_list=activation_list, target=cy.array([1, 0, 0, 0, 0]))
-    weights, biases = nn.get_weights_biases()
-    print("bias post-backprop:", biases[-1])
-    """
+    nn.create_weights_biases(modelSize=[784, 32, 32, 10])
