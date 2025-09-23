@@ -2,19 +2,6 @@ import cupy as cy
 import pickle
 
 
-def relu(x):
-    return cy.maximum(0, x)
-
-
-def relu_derivative(x):
-    return (x > 0).astype(float)
-
-
-def softmax(x):
-    e_x = cy.exp(x - cy.max(x, axis=1, keepdims=True))
-    return e_x / cy.sum(e_x, axis=1, keepdims=True)
-
-
 class neuralNetwork:
     def __init__(self):
         return
@@ -57,7 +44,7 @@ class neuralNetwork:
 
         for i in range(len(self.weights) - 1):
             z = cy.dot(activation_list[i], self.weights[i].T) + self.biases[i]
-            a = relu(z)
+            a = self.relu(z)
             
             if dropout_rate > 0:
                 mask = (cy.random.rand(*a.shape) > dropout_rate).astype(a.dtype)
@@ -67,7 +54,7 @@ class neuralNetwork:
             activation_list.append(a)
 
         z_out = cy.dot(activation_list[-1], self.weights[-1].T) + self.biases[-1]
-        a_out = softmax(z_out)
+        a_out = self.softmax(z_out)
         z_list.append(z_out)
         activation_list.append(a_out)
 
@@ -87,7 +74,7 @@ class neuralNetwork:
         gradient_biases.insert(0, grad_b)
 
         for i in range(len(self.weights)-2, -1, -1):
-            dz_current = cy.dot(dz_current, self.weights[i+1]) * relu_derivative(z_list[i])
+            dz_current = cy.dot(dz_current, self.weights[i+1]) * self.relu_derivative(z_list[i])
             
             grad_w = cy.dot(dz_current.T, activation_list[i]) / batch_size + l2_lambda * self.weights[i]
             grad_b = cy.mean(dz_current, axis=0)
@@ -134,9 +121,25 @@ class neuralNetwork:
 
     def he_init(self, fan_in, fan_out):
         return cy.random.randn(fan_out, fan_in) * cy.sqrt(2 / fan_in)
+    
+    
+    def relu(self, x):
+        return cy.maximum(0, x)
+
+
+    def relu_derivative(self, x):
+        return (x > 0).astype(float)
+
+
+    def softmax(self, x):
+        if x.ndim == 1:
+            e_x = cy.exp(x - cy.max(x))
+            return e_x / cy.sum(e_x)
+        else:
+            e_x = cy.exp(x - cy.max(x, axis=1, keepdims=True))
+            return e_x / cy.sum(e_x, axis=1, keepdims=True)
 
 
 if __name__ ==  "__main__":
     nn = neuralNetwork()
-    
-    nn.create_weights_biases(modelSize=[784, 32, 32, 10])
+    #nn.create_weights_biases(modelSize=[784, 32, 32, 10])

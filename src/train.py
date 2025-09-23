@@ -98,8 +98,8 @@ if __name__ ==  "__main__":
     nn = neuralNetwork()
     nn.load_weights_biases()
     
-    run_epoch(epoch_count=100)
+    run_epoch(epoch_count=5)
     print("Time: ", time.time() - start_time)
-    save_data()
-    nn.save_weights_biases()
+    #save_data()
+    #nn.save_weights_biases()
     showGraph()
