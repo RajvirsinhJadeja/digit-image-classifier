@@ -100,6 +100,6 @@ if __name__ ==  "__main__":
     
     run_epoch(epoch_count=5)
     print("Time: ", time.time() - start_time)
-    #save_data()
-    #nn.save_weights_biases()
+    save_data()
+    nn.save_weights_biases()
     showGraph()

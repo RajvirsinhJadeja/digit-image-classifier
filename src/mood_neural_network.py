@@ -115,7 +115,7 @@ class neuralNetwork:
             "biases": self.biases,
         }
         
-        with open(f"data/saved_models/updated_weights_biases.pkl", "wb") as file:
+        with open(f"data/updated_weights_biases.pkl", "wb") as file:
             pickle.dump(data, file)
 
 
@@ -142,4 +142,4 @@ class neuralNetwork:
 
 if __name__ ==  "__main__":
     nn = neuralNetwork()
-    #nn.create_weights_biases(modelSize=[784, 32, 32, 10])
+    nn.create_weights_biases(modelSize=[784, 64, 32, 16, 10])
