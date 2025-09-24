@@ -1,7 +1,7 @@
 import cupy as cy
 import pickle
 import time
-from mood_neural_network import neuralNetwork
+from neural_network import neuralNetwork
 from dataset_analysis import showGraph
 
 start_time = time.time()
@@ -28,14 +28,14 @@ def train():
     total_loss = 0
     total_acc = 0
     for start in range(0, len(train_embeddings), batch_size):
-        input_batch = train_embeddings[start:start+batch_size]  # shape 32xinput
-        target_batch = train_targets[start:start+batch_size]    # shape 32x10
+        input_batch = train_embeddings[start:start+batch_size]  # shape batchxinput
+        target_batch = train_targets[start:start+batch_size]    # shape batchx10
         
         # Forward Pass
         z_list, activation_list = nn.forward_pass(x=input_batch, dropout_rate=0)
         
         # Loss/Acc
-        probability_list = activation_list[-1]  # shape 32x10
+        probability_list = activation_list[-1]  # shape batchx10
         
         batch_loss = -cy.sum(target_batch * cy.log(probability_list + 1e-9), axis=1)
         total_loss += cy.sum(batch_loss)
@@ -55,14 +55,14 @@ def validation():
     total_loss = 0
     total_acc = 0
     for start in range(0, len(val_embeddings), batch_size):
-        input_batch = val_embeddings[start:start+batch_size]  # shape 32xinput
-        target_batch = val_targets[start:start+batch_size]    # shape 32x5
+        input_batch = val_embeddings[start:start+batch_size]  # shape batchxinput
+        target_batch = val_targets[start:start+batch_size]    # shape batchx10
         
         # Forward Pass
         z_list, activation_list = nn.forward_pass(x=input_batch, dropout_rate=0)
         
         # Loss/Acc
-        probability_list = activation_list[-1]  # shape 32x5
+        probability_list = activation_list[-1]  # shape batchx10
         
         batch_loss = -cy.sum(target_batch * cy.log(probability_list), axis=1)
         total_loss += cy.sum(batch_loss)
@@ -98,7 +98,7 @@ if __name__ ==  "__main__":
     nn = neuralNetwork()
     nn.load_weights_biases()
     
-    run_epoch(epoch_count=5)
+    run_epoch(epoch_count=50)
     print("Time: ", time.time() - start_time)
     save_data()
     nn.save_weights_biases()

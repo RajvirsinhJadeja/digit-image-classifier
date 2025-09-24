@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from mood_neural_network import neuralNetwork
+from neural_network import neuralNetwork
 from PIL import ImageGrab
 import cupy as cy
 
@@ -67,7 +67,7 @@ class App(ctk.CTk):
     
     def draw(self, event):
         x, y = event.x, event.y
-        self.canvas.create_line(self.old_x, self.old_y, x, y, width=20, fill="white", capstyle="round", smooth=True) # type: ignore
+        self.canvas.create_line(self.old_x, self.old_y, x, y, width=17, fill="white", capstyle="round", smooth=True) # type: ignore
         self.old_x, self.old_y = x, y
 
 
@@ -90,10 +90,7 @@ class App(ctk.CTk):
         
         gray = img.convert("L")
         resized_gray = gray.resize((28, 28))
-        resized_gray.save("canvas_image.png")
         pixels = cy.array(resized_gray.getdata())
-        
-        print(pixels)
         
         z_list, activation_list = self.nn.forward_pass(x=pixels, dropout_rate=0)
         self.prediction = cy.argmax(activation_list[-1])
