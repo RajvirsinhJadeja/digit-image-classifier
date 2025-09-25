@@ -4,6 +4,7 @@ import time
 from neural_network import neuralNetwork
 from dataset_analysis import showGraph
 
+
 start_time = time.time()
 
 train_data = cy.load("data/mnist_train.npz")
