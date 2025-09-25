@@ -1,2 +1,2 @@
-# text-to-emotion
-A neural network built from scratch in Python to classify handwritten digits, using a flattened pixel input, ReLU hidden layers, and Softmax output.
+# Digit Image Classifier
+A simple neural network built from scratch in Python to classify text into five emotions — happy, sad, angry, scared, and disgust — using a Bag of Words representation, ReLU hidden layers, and Softmax output.
