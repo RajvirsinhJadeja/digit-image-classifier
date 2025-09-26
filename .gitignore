@@ -1,3 +1,9 @@
+# Project files
+data/mnist_train.csv
+data/mnist_test.csv
+data/mnist_train.npz
+data/mnist_test.npz
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
